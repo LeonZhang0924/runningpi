@@ -1,4 +1,8 @@
-runningpi
-=========
+Running Pi
+	RC Car cu control prin telefon/controller Xbox
 
-Hackathon 2013 - RunningPi
+Categoria: Hardware
+Membrii:
+	Virgil Cervicescu
+	Nicolae Rosia
+	Abel Vesa
