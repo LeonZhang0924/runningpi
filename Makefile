@@ -1,4 +1,6 @@
 DIRS = rpipwm
+DIRS += bma180
+DIRS += itg3200
 
 CLEANDIRS = $(DIRS:%=clean-%)
 MODULESDIR = $(DIRS:%=modules-%)
