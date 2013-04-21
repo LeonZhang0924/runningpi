@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/menuitem_connect"
+        android:title="@string/menu_connect"
+        android:icon="@android:drawable/ic_menu_call"
+        android:showAsAction="ifRoom" >
+    </item>
+    <item android:id="@+id/menuitem_stream"
+        android:title="@string/menu_stream"
+        android:icon="@android:drawable/ic_media_play"
+        android:showAsAction="ifRoom" >
+    </item>
+    <item android:id="@+id/menuitem_help"
+        android:title="@string/menu_help"
+        android:icon="@android:drawable/ic_menu_help"
+        android:showAsAction="ifRoom" >
+    </item>
+</menu>

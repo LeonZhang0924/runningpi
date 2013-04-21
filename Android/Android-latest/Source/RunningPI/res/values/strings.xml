@@ -1,0 +1,12 @@
+<resources>
+
+    <string name="app_name">RunningPI</string>
+	
+    <!-- Menu -->
+    <string name="menu_connect">Connect</string>
+    <string name="menu_connecting">Connecting..</string>
+    <string name="menu_stream">Streaming..</string>
+    <string name="menu_disconnecting">Disonnecting..</string>
+    <string name="menu_help">Help</string>
+    
+</resources>
