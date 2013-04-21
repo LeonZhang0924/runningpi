@@ -351,9 +351,10 @@ static ssize_t set_enable_axis(struct device *dev, struct device_attribute *attr
 		return -EINVAL;
 
 	for(i=0; i<count; i++) {
-		if (strncasecmp(buf+i, "X", 1) == 0)
+		if (strncasecmp(buf+i, "X", 1) == 0) {
+			printk(KERN_INFO "PENTRU ABEL");
 			itg3200_set_axis_enable(client, ITG3200_GYRO_X);
-		else if (strncasecmp(buf+i, "Y", 1) == 0)
+		} else if (strncasecmp(buf+i, "Y", 1) == 0)
 			itg3200_set_axis_enable(client, ITG3200_GYRO_Y);
 		else if (strncasecmp(buf+i, "Z", 1) == 0)
 			itg3200_set_axis_enable(client, ITG3200_GYRO_Z);
@@ -451,7 +452,7 @@ static int itg3200_detect(struct i2c_client *client,
 {
 //	if (client->addr != ITG3200_I2C_ADDRESS)
 //		return -ENODEV;
-
+	printk(KERN_INFO "itg3200 detect!!!");
 	if (itg3200_get_id(client) != ITG3200_ID_MAGIC)
 		return -ENODEV;
 
@@ -466,7 +467,7 @@ static int itg3200_probe(struct i2c_client *client,
 {
 	struct itg3200_data *data;
 	int err = 0;
-
+	printk(KERN_INFO "itg3200 probe!");
 	data = kzalloc(sizeof(struct itg3200_data), GFP_KERNEL);
 	if (!data) {
 		err = -ENOMEM;
@@ -552,6 +553,7 @@ static struct i2c_driver itg3200_driver = {
 
 static int __init itg3200_init(void)
 {
+	printk(KERN_INFO "itg3200_init!!");
 	return i2c_add_driver(&itg3200_driver);
 }
 

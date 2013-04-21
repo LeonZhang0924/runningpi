@@ -38,7 +38,26 @@ struct pwm_device {
 	int motor_pwm_duty;
 
 	int enabled;
+	int direction;
 };
+
+void set_direction(struct pwm_device *dev, int direction)
+{
+	switch (direction) {
+	case 0: { // forward
+		gpio_set_value(GPIO_MOTOR_EN_PIN, 1);
+	} break;
+
+	case 1: { // backward
+		gpio_set_value(GPIO_MOTOR_EN_PIN, 0);
+	} break;
+	}
+
+	hrtimer_cancel(dev->motor_timer);
+	gpio_set_value(GPIO_MOTOR_PWM_PIN, 0);
+	msleep(200);
+	hrtimer_start(dev->motor_timer, ktime_set(0, 0), HRTIMER_MODE_REL);
+}
 
 static ssize_t pwm_sysfs_show(struct kobject *kobj, struct attribute *attr, char *buffer)
 {
@@ -51,6 +70,8 @@ static ssize_t pwm_sysfs_show(struct kobject *kobj, struct attribute *attr, char
 		var = dev->enabled;
 	} else if (strcmp(attr->name, "motor_pwm_duty") == 0) {
 		var = dev->motor_pwm_duty;
+	} else if (strcmp(attr->name, "direction") == 0) {
+		var = dev->direction;
 	}
 
 	return sprintf(buffer, "%d\n", var);
@@ -65,14 +86,13 @@ static ssize_t pwm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 	sscanf(buffer, "%du", &var);
 
 	if (strcmp(attr->name, "servo_pwm_duty") == 0) {
-		if (var >= 200000 && var <= 2500000)
+		if (var >= 1500000 && var <= 2100000)
 			dev->servo_pwm_duty = var;
-		else
-			dev->servo_pwm_duty = 0;
+		//else
+		//	dev->servo_pwm_duty = 0;
 	} else if (strcmp(attr->name, "enabled") == 0) {
 		if (var == 1) {
 			dev->enabled = 1;
-			gpio_set_value(GPIO_MOTOR_EN_PIN, 1);
 			servo_fsm_state = 0;
 			motor_fsm_state = 0;
 
@@ -80,7 +100,6 @@ static ssize_t pwm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 			hrtimer_start(dev->motor_timer, ktime_set(0, 0), HRTIMER_MODE_REL);
 		} else {
 			dev->enabled = 0;
-			gpio_set_value(GPIO_MOTOR_EN_PIN, 0);
 
 			hrtimer_cancel(dev->servo_timer);
 			hrtimer_cancel(dev->motor_timer);
@@ -89,8 +108,15 @@ static ssize_t pwm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 	} else if (strcmp(attr->name, "motor_pwm_duty") == 0) {
 		if (var >= 0 && var <= 500000)
 			dev->motor_pwm_duty = var;
-		else
-			dev->motor_pwm_duty = 0;
+		//else
+		//	dev->motor_pwm_duty = 0;
+	} else if (strcmp(attr->name, "direction") == 0) {
+		if (var == 0 || var == 1) {
+			if (dev->direction != var) {
+				set_direction(dev, var);
+				dev->direction = var;
+			}
+		}
 	}
 
 	return size;
@@ -133,10 +159,16 @@ struct attribute enabled_attr = {
 		.mode = 0666,
 };
 
+struct attribute direction_attr = {
+		.name = "direction",
+		.mode = 0666,
+};
+
 struct attribute *attributes[] = {
 		&motor_pwm_duty_attr,
 		&servo_pwm_duty_attr,
 		&enabled_attr,
+		&direction_attr,
 		NULL,
 };
 
@@ -170,13 +202,13 @@ static enum hrtimer_restart servo_pwm_cb(struct hrtimer *timer)
 		servo_fsm_state = 1;
 
 		delay = ktime_set(0, pwm_dev->servo_pwm_duty);
-		printk(KERN_INFO "%s: start servo_now: %lld\n", __FUNCTION__, now.tv64);
+		//printk(KERN_INFO "%s: start servo_now: %lld\n", __FUNCTION__, now.tv64);
 	} else {
 		gpio_set_value(GPIO_SERVO_PWM_PIN, 0);
 		now = ktime_get();
 		diff = ktime_sub(now, frame_start); // ~ 1 500 000
 		delay = ktime_sub(ktime_set(0, 20000000), diff);
-		printk(KERN_INFO "%s: middle servo_now: %lld\n", __FUNCTION__, now.tv64);
+		//printk(KERN_INFO "%s: middle servo_now: %lld\n", __FUNCTION__, now.tv64);
 
 		servo_fsm_state = 0;
 	}
@@ -228,8 +260,9 @@ static int __init hrtimerdemo_init(void)
 	if (!pwm_dev) {
 		return -ENOMEM;
 	}
-	pwm_dev->servo_pwm_duty = 1000000;
+	pwm_dev->servo_pwm_duty = 1800000;
 	pwm_dev->motor_pwm_duty = 250000;
+
 
 	kobject_init(&pwm_dev->kobj, &kobj_type);
 	ret = kobject_add(&pwm_dev->kobj, NULL, "pwmdev");
@@ -241,7 +274,7 @@ static int __init hrtimerdemo_init(void)
 	pwm_dev->servo_timer = kzalloc(sizeof(struct hrtimer), GFP_KERNEL);
 	if (IS_ERR(pwm_dev->servo_timer)) {
 		ret = PTR_ERR(pwm_dev->servo_timer);
-		printk(KERN_CRIT "kzalloc_timer failed.\n");
+		//printk(KERN_CRIT "kzalloc_timer failed.\n");
 		goto kzalloc_timer;
 	}
 
@@ -251,7 +284,7 @@ static int __init hrtimerdemo_init(void)
 	pwm_dev->motor_timer = kzalloc(sizeof(struct hrtimer), GFP_KERNEL);
 	if (IS_ERR(pwm_dev->motor_timer)) {
 		ret = PTR_ERR(pwm_dev->motor_timer);
-		printk(KERN_CRIT "kzalloc_timer failed.\n");
+		//printk(KERN_CRIT "kzalloc_timer failed.\n");
 		goto kzalloc_timer;
 	}
 
@@ -297,6 +330,7 @@ static int __init hrtimerdemo_init(void)
 	if (ret) {
 		printk(KERN_CRIT "gpio_direction_input failed: %d\n", ret);
 	}
+	pwm_dev->direction = 1;
 
 	printk(KERN_INFO "%s inited.\n", __FUNCTION__);
 
