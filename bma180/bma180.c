@@ -32,10 +32,11 @@ struct bma180_meas_data {
 	uint8_t buff[7];
 };
 
-	int16_t accel_x;
-	int16_t accel_y;
-	int16_t accel_z;
-	uint8_t temp;
+int16_t accel_x;
+int16_t accel_y;
+int16_t accel_z;
+uint8_t temp;
+
 static const unsigned short normal_i2c[] =
 		{ BMA180_I2C_ADDRESS, I2C_CLIENT_END };
 
@@ -80,7 +81,6 @@ uint16_t BMA180_getRegValue(uint8_t adr)
 {
 	char buff[1];
 	uint8_t read = i2c_smbus_read_i2c_block_data(g_client, adr, 1, (u8*)buff); //Wire.requestFrom((int16_t)address, 1);
-	printk(KERN_INFO "GET REG VALUE");
 	if (read == 1) {
 		return buff[0];
 	} else {
@@ -97,13 +97,12 @@ int BMA180_setRegValue(uint8_t regAdr, uint8_t val, uint8_t maskPreserve)
 	uint8_t ret = i2c_smbus_write_byte_data(g_client, regAdr, orgval|val);
 
 	if (tmp == 0xFFFF) {
-		printk(KERN_INFO "Aiureaaaa");
+		printk(KERN_INFO "failed to write");
 		return -1;
 	}
 
 	if (ret != 0) {
 		printk(KERN_INFO "failed to write");
-		//failCount++;
 		return -1;
 	}
 
@@ -175,7 +174,6 @@ static int bma180_probe(struct i2c_client *client,
 		goto exit;
 	}
 	dev_info(&client->dev, "probe succeeded!\n");
-	printk(KERN_INFO "HALLLLLLLOO");
 	g_client = client;
 
 	BMA180_SoftReset();
